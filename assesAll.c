@@ -5,6 +5,9 @@
 
 #define MAXMEM 500
 
+
+char currentFileLoaded[MAXMEM] = "";
+
 struct student{
 	int id;
 	char name[MAXMEM];
@@ -66,17 +69,31 @@ void displayStu(struct student *head, FILE *fp){
 void saveFile(struct student *head, FILE *fp){
 	char fileName[MAXMEM]; 
 	char buffer[MAXMEM];
+	int choice;
 	
 	printf("\nEnter File Name to Save to: ");
 	fgets(fileName, MAXMEM, stdin);
 	fileName[strcspn(fileName, "\n")] = 0;
+	
 	
 	fp = fopen(fileName, "r");
 
  	if(fp == NULL){
 		fp = fopen(fileName, "w");
 	}
-	else{
+	else if (strcmp(fileName, currentFileLoaded) == 0){
+		while(choice < 1 || choice > 2){
+			printf("File is the Same as Loaded File\nAppend or Overwrite?(1]Overwrite/2]Append): ");
+			scanf("%d", &choice);
+		}
+		if(choice == 1){
+			fp = fopen(fileName, "w+");			
+		}else{
+			fclose(fp);
+			fp = fopen(fileName, "a");
+			fprintf(fp, "%c", '\n');
+		}
+	}else{
 		fclose(fp);
 		fp = fopen(fileName, "a");
 		fprintf(fp, "%c", '\n');
@@ -122,6 +139,7 @@ struct student *loadFile(struct student *head, FILE *fp){
 	printf("\nEnter file name to be loaded: ");
 	fgets(fileName, MAXMEM, stdin);
 	fileName[strcspn(fileName, "\n")] = 0;
+	strcpy(currentFileLoaded, fileName);
 	
 	fp = fopen(fileName, "r");
 	
@@ -154,13 +172,57 @@ struct student *loadFile(struct student *head, FILE *fp){
 }
 
 
+struct student *delRecord(struct student *head, FILE *fp){
+	struct student *current = head, *prev = NULL;
+	
+	int idToDel, didOperation = 0;
+	
+	while(current != NULL){
+		printf("ID: %d | Name: %s | GPA: %.2f |\n", current->id, current->name, current->gpa);
+		current = current->next;
+	}
+	
+	printf("\nPlease Input the ID number of the Record you want to delete\nID Number: ");
+	scanf("%d", &idToDel);
+	getchar();
+	
+	current = head;
+	
+	while(current != NULL){
+		if(current->id == idToDel){
+			if(prev == NULL){
+				head = current->next;
+				free(current);
+				current = head;
+				didOperation = 1;
+			}
+			else {
+				prev->next = current->next;
+				free(current);
+				current = prev->next;
+				didOperation = 1;
+			}
+		
+		} else{
+			prev = current;
+			current = current->next;
+		}
+	}
+	if(didOperation == 0){
+		printf("\nID not found\nPlease Re-Enter");	
+	}else{
+		printf("\nRecord Deleted...");
+	}
+	
+	return head;
+}
 
 void menu(struct student *head, FILE *fp){
 	int choice = 0;
 	
-	while(choice < 1 || choice > 5){
+	while(choice < 1 || choice > 6){
 		printf("What do you want to do:\n ");
-		printf("1) Add a Student\n2) Display All Students\n3) Save Records to File\n4) Load Records from a File\n5) Exit the Program\nYour Choice: ");
+		printf("1) Add a Student\n2) Display All Students\n3) Save Records to File\n4) Load Records from a File\n5) Delete A Record?\n6) Exit the Program\nYour Choice: ");
 		scanf("%d", &choice);
 		getchar();
 	}
@@ -180,9 +242,12 @@ void menu(struct student *head, FILE *fp){
 			menu(head, fp);
 			break;
 		case 5:
+			head = delRecord(head, fp);
+			menu(head, fp);
+			break;
+		case 6: 
 			resetList(head);
 			exit(0);
-			break;
 		default:
 			printf("\nUnhandled Process, Exiting....\n");	
 			exit(1);
