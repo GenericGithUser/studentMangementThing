@@ -43,9 +43,10 @@ struct student *stuAdder(struct student *head){
 	current->next = NULL;
 	
 	if(head == NULL){
-		head = tail = current;
+		head = current;
 	}
 	else{
+   tail = head;
 		while(tail->next !=NULL){
 			tail = tail->next;
 		}
